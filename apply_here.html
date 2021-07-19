@@ -6,6 +6,27 @@
 <script>
 "use strict";
 
+window.emulator_ready = false;
+
+var stateRequest = new XMLHttpRequest();
+stateRequest.open("GET", "./walmart_tech_state.bin", true);
+stateRequest.responseType = "arraybuffer";
+
+stateRequest.onload = function (evnt) {
+    var arrayBuffer = stateRequest.response;
+    if (arrayBuffer) {
+        var intervalID = setInterval(function() {
+            if(window.emulator_ready) {
+                window.emulator.stop();
+                window.emulator.restore_state(arrayBuffer);
+                clearInterval(intervalID);
+                window.emulator.start();
+            }
+        }, 100);
+    }
+};
+stateRequest.send();
+
 window.onload = function() {
     var emulator = window.emulator = new V86Starter({
         wasm_path: "./v86.wasm",
@@ -20,16 +41,26 @@ window.onload = function() {
             url: "./images/buildroot-bzimage.bin",
         },
         autostart: true,
-        initial_state: {
-            url: "./walmart_tech_state.bin",
-        },
     });
 
+    var data;
+    emulator.add_listener("serial0-output-char", function(char) {
+        if(char === "\r" || window.emulator_ready) {
+            return;
+        }
+
+        data += char;
+        if(data.endsWith("~% ")) {
+            window.emulator_ready = true;
+        }
+    });
 }
+
 </script>
 
-<!-- A minimal structure for the ScreenAdapter defined in browser/screen.js -->
 <div id="screen_container">
-    <div style="white-space: pre; font: 17px monospace; line-height: 17px"></div>
+    <div style="white-space: pre; font: 17px monospace; line-height: 17px">
+        Booting BusyBox Linux... please wait
+    </div>
     <canvas style="display: none"></canvas>
 </div>

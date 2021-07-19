@@ -11394,6 +11394,10 @@ n.Te = function() {
     this.v.send("cpu-run")
 }
 ;
+n.start = function() {
+    this.v.send("cpu-run")
+}
+;
 n.stop = function() {
     this.v.send("cpu-stop")
 }
